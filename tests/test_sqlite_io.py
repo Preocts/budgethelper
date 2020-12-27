@@ -4,9 +4,7 @@
 
 Author: Preocts <preocts@preocts.com>
 """
-import os
 import unittest
-import sqlite3
 
 # from unittest.mock import patch
 
@@ -18,16 +16,26 @@ class TestSQLiteio(unittest.TestCase):
 
     def setUp(self) -> None:
         """ Setup """
-        conn = sqlite3.connect("./tests/fixtures/testdb")
-        conn.close()
+        self.conn = sqlite_io.SQLiteio(":memory:")
         return super().setUp()
 
     def tearDown(self) -> None:
         """ Teardown """
-        os.remove("./tests/fixtures/testdb")
+        del self.conn
         return super().tearDown()
 
     def test_opens_database(self) -> None:
         """ Ensure we open database on initialization """
         dbconn = sqlite_io.SQLiteio(":memory:")
         self.assertEqual(dbconn.changes, 0)
+
+    def test_transaction_table_made(self) -> None:
+        """ Check for correct table """
+        self.conn.cursor.execute(
+            "SELECT * FROM sqlite_master WHERE type = 'table'"
+        )
+        results = self.conn.cursor.fetchall()
+        table_list = [i[1] for i in results]
+        expected = ["transactions"]
+        for i in expected:
+            self.assertIn(i, table_list)
