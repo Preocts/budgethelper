@@ -13,6 +13,10 @@ repos:
     -   id: debug-statements
     -   id: fix-encoding-pragma
     -   id: check-docstring-first
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: 'v0.790'
+    hooks:
+    -   id: mypy
 -   repo: https://github.com/psf/black
     rev: '20.8b1'
     hooks:
