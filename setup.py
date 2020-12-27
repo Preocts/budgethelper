@@ -6,13 +6,13 @@ from setuptools import setup
 
 
 setup(
-    name="placeholder_name",
-    version="0.0.0",
-    license="GNU General Public License",
-    description="Put a description here",
+    name="budget_helper_preocts",
+    version="0.0.1",
+    license="MIT License",
+    description="Something to help me keep track of details",
     author="Preocts",
     author_email="preocts@preocts.com",
-    url="https://github.com/Preocts/",
+    url="https://github.com/Preocts/budgethelper",
     packages=find_packages("src"),
     package_dir={"": "src"},
     install_requires=[],
