@@ -10,6 +10,7 @@ import logging
 from typing import List
 
 from budgethelper.sqlite_schema import database_tables as schema
+from budgethelper.sqlite_schema import TransRow
 
 logger = logging.getLogger(__name__)
 
@@ -61,9 +62,19 @@ class SQLiteio:
         self.cursor.execute(schema[table]["table_schema"])
         self.conn.commit()
 
-    def save_trans(self) -> int:
+    def save_row(self, table: str, row_data: TransRow) -> None:
         """ Save a transactions to the database """
-        return self.changes
+        for key, value in row_data.items():
+            if not isinstance(value, schema[table]["required"][key]):
+                msg = (
+                    f"Invalid data type for {key}. Found {type(value)}, "
+                    f"expecting {schema[table]['required'][key]}"
+                )
+                logger.error(msg)
+                raise Exception(msg)
+        values = tuple(row_data.values())
+        self.conn.commit()
+        self.cursor.execute(schema[table]["save_row"], values)
 
     def get_trans(self) -> int:
         """ Read a transactions to the database """

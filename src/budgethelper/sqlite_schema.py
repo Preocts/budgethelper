@@ -4,9 +4,11 @@
 
 Author: Preocts <preocts@preocts.com>
 """
+from datetime import datetime
 from typing import Tuple
 from typing import Dict
 from typing import TypedDict
+from typing import Any
 
 
 class SchemaDict(TypedDict):
@@ -14,7 +16,17 @@ class SchemaDict(TypedDict):
 
     table_schema: str
     column_names: Tuple[str, ...]
+    required: Dict[str, Any]
     list_columns: str
+    save_row: str
+
+
+class TransRow(TypedDict):
+    """ Schema for Transaction Types """
+
+    source: int
+    amount: float
+    date: datetime
 
 
 database_tables: Dict[str, SchemaDict] = {
@@ -26,6 +38,11 @@ database_tables: Dict[str, SchemaDict] = {
             "amount NUMERIC NOT NULL, "
             "date DATETIME NOT NULL )"
         ),
+        "required": {
+            "source": int,
+            "amount": float,
+            "date": datetime,
+        },
         "column_names": (
             "id",
             "source",
@@ -33,5 +50,7 @@ database_tables: Dict[str, SchemaDict] = {
             "date",
         ),
         "list_columns": "SELECT * FROM transactions WHERE id = 0",
+        "save_row": "INSERT INTO transactions(source, amount, date) "
+        "VALUES (?, ?, ?)",
     },
 }

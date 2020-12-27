@@ -6,6 +6,8 @@ Author: Preocts <preocts@preocts.com>
 """
 import unittest
 
+from datetime import datetime
+
 # from unittest.mock import patch
 
 from budgethelper import sqlite_io
@@ -49,3 +51,20 @@ class TestSQLiteio(unittest.TestCase):
 
         with self.assertRaises(Exception):
             self.conn.get_column_names("fake_table")
+
+    def test_add_row_translation(self) -> None:
+        """ Add a row to given table, follow schema """
+        table: str = "transactions"
+        row: sqlite_schema.TransRow = {
+            "source": 0,
+            "amount": 10.99,
+            "date": datetime.now(),
+        }
+        change_count: int = self.conn.changes
+        self.conn.save_row(table, row)
+        self.assertEqual(self.conn.changes, change_count + 1)
+
+        # Breaking type for validation type outside of mypy
+        row["source"] = "TestFail"  # type: ignore
+        with self.assertRaises(Exception):
+            self.conn.save_row(table, row)  # type: ignore
