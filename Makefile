@@ -46,4 +46,4 @@ blacken: ## Run Black against code
 	black --line-length 79 $(TESTDIR)
 
 tests: ## Run all tests found in the /tests directory.
-	pytest $(TESTDIR)
+	pytest -v $(TESTDIR)
