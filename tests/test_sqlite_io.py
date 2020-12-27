@@ -52,7 +52,7 @@ class TestSQLiteio(unittest.TestCase):
         with self.assertRaises(Exception):
             self.conn.get_column_names("fake_table")
 
-    def test_add_row_translation(self) -> None:
+    def test_add_row_transaction(self) -> None:
         """ Add a row to given table, follow schema """
         table: str = "transactions"
         row: sqlite_schema.TransRow = {
@@ -68,3 +68,18 @@ class TestSQLiteio(unittest.TestCase):
         row["source"] = "TestFail"  # type: ignore
         with self.assertRaises(Exception):
             self.conn.save_row(table, row)  # type: ignore
+
+    def test_get_row_transaction(self) -> None:
+        """ Get a row from a given table, force schema """
+        table: str = "transactions"
+        row: sqlite_schema.TransRow = {
+            "source": 99,
+            "amount": 99.99,
+            "date": datetime.now(),
+        }
+        self.conn.save_row(table, row)
+        results = self.conn.get_row_by_rid(table, 1)
+        self.assertIsInstance(results, dict)
+        self.assertEqual(results["rid"], 1)
+        self.assertEqual(results["source"], 99)
+        self.assertEqual(results["amount"], 99.99)

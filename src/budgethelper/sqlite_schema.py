@@ -17,13 +17,16 @@ class SchemaDict(TypedDict):
     table_schema: str
     column_names: Tuple[str, ...]
     required: Dict[str, Any]
+    data_type: Any
     list_columns: str
     save_row: str
+    get_row: str
 
 
-class TransRow(TypedDict):
+class TransRow(TypedDict, total=False):
     """ Schema for Transaction Types """
 
+    rid: int
     source: int
     amount: float
     date: datetime
@@ -33,7 +36,7 @@ database_tables: Dict[str, SchemaDict] = {
     "transactions": {
         "table_schema": (
             "CREATE TABLE transactions "
-            "( id INTEGER PRIMARY KEY, "
+            "( rid INTEGER PRIMARY KEY, "
             "source INTEGER NOT NULL, "
             "amount NUMERIC NOT NULL, "
             "date DATETIME NOT NULL )"
@@ -43,14 +46,16 @@ database_tables: Dict[str, SchemaDict] = {
             "amount": float,
             "date": datetime,
         },
+        "data_type": TransRow,
         "column_names": (
-            "id",
+            "rid",
             "source",
             "amount",
             "date",
         ),
-        "list_columns": "SELECT * FROM transactions WHERE id = 0",
+        "list_columns": "SELECT * FROM transactions WHERE rid = 0",
         "save_row": "INSERT INTO transactions(source, amount, date) "
         "VALUES (?, ?, ?)",
+        "get_row": "SELECT * FROM transactions WHERE rid = ?",
     },
 }

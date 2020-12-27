@@ -8,6 +8,7 @@ import sqlite3
 import logging
 
 from typing import List
+from typing import Any
 
 from budgethelper.sqlite_schema import database_tables as schema
 from budgethelper.sqlite_schema import TransRow
@@ -76,9 +77,14 @@ class SQLiteio:
         self.conn.commit()
         self.cursor.execute(schema[table]["save_row"], values)
 
-    def get_trans(self) -> int:
-        """ Read a transactions to the database """
-        return self.changes
+    def get_row_by_rid(self, table: str, rid: int) -> Any:
+        """ Finds first and returns row from the database """
+        self.cursor.execute(schema[table]["get_row"], (rid,))
+        results = self.cursor.fetchone()
+        translated: dict = {}
+        for idx, col in enumerate(schema[table]["column_names"]):
+            translated[col] = results[idx]
+        return translated
 
     def update_trans(self) -> int:
         """ Update a transactions in the database """
