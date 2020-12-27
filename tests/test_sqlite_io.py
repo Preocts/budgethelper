@@ -9,6 +9,7 @@ import unittest
 # from unittest.mock import patch
 
 from budgethelper import sqlite_io
+from budgethelper import sqlite_schema
 
 
 class TestSQLiteio(unittest.TestCase):
@@ -29,13 +30,22 @@ class TestSQLiteio(unittest.TestCase):
         dbconn = sqlite_io.SQLiteio(":memory:")
         self.assertEqual(dbconn.changes, 0)
 
-    def test_transaction_table_made(self) -> None:
-        """ Check for correct table """
+    def test_table_creation(self) -> None:
+        """ Check for correctly created tables """
         self.conn.cursor.execute(
             "SELECT * FROM sqlite_master WHERE type = 'table'"
         )
         results = self.conn.cursor.fetchall()
         table_list = [i[1] for i in results]
-        expected = ["transactions"]
-        for i in expected:
+        for i in sqlite_schema.database_tables:
             self.assertIn(i, table_list)
+
+    def test_table_schema_matches(self) -> None:
+        """ Confirm config schema is being used """
+        for table in sqlite_schema.database_tables:
+            results = self.conn.get_column_names(table)
+            for col in sqlite_schema.database_tables[table]["column_names"]:
+                self.assertIn(col, results)
+
+        with self.assertRaises(Exception):
+            self.conn.get_column_names("fake_table")

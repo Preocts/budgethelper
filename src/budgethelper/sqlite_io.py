@@ -5,8 +5,13 @@
 Author: Preocts <preocts@preocts.com>
 """
 import sqlite3
+import logging
 
 from typing import List
+
+from budgethelper.sqlite_schema import database_tables as schema
+
+logger = logging.getLogger(__name__)
 
 
 class SQLiteio:
@@ -35,20 +40,25 @@ class SQLiteio:
         results = self.cursor.fetchall()
         return [t[1] for t in results]
 
+    def get_column_names(self, table_name) -> List[str]:
+        """ return column names from given table """
+        if table_name not in schema:
+            msg = "Invalid table_name provided. Double check sqlite.schema."
+            logger.error(msg)
+            raise Exception(msg)
+        self.cursor.execute(schema[table_name]["list_columns"])
+        return [c[0] for c in self.cursor.description]
+
     def _schema_init(self) -> None:
         """ Ensures database has the proper schema, builds if needed """
         tables = self._get_tables()
-        if "transactions" not in tables:
-            self._build_transaction_table()
+        for table in schema:
+            if table not in tables:
+                self._build_table(table)
 
-    def _build_transaction_table(self) -> None:
-        """ Build transactions table """
-        self.cursor.execute(
-            "CREATE TABLE transactions "
-            "(trns INTEGER PRIMARY KEY, "
-            "source INTEGER NOT NULL, "
-            "amount NUMERIC)"
-        )
+    def _build_table(self, table: str) -> None:
+        """ Build table from schema"""
+        self.cursor.execute(schema[table]["table_schema"])
         self.conn.commit()
 
     def save_trans(self) -> int:
