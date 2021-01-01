@@ -4,6 +4,12 @@ default_stages:
 - commit
 - push
 repos:
+-   repo: https://github.com/psf/black
+    rev: '20.8b1'
+    hooks:
+    -   id: black
+        args:
+        - '-l 79'
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: 'v3.4.0'
     hooks:
@@ -17,16 +23,6 @@ repos:
     rev: 'v0.790'
     hooks:
     -   id: mypy
--   repo: https://github.com/psf/black
-    rev: '20.8b1'
-    hooks:
-    -   id: black
-        args:
-        - '-l 79'
--   repo: https://github.com/PyCQA/pylint
-    rev: 'pylint-2.6.0'
-    hooks:
-    -   id: pylint
 -   repo: https://gitlab.com/PyCQA/flake8
     rev: '3.8.4'
     hooks:
@@ -39,3 +35,10 @@ repos:
     rev: '1.7.0'
     hooks:
     - id: bandit
+-   repo: local
+    hooks:
+    -   id: pylint
+        name: pylint
+        entry: pylint
+        language: system
+        types: [python]
