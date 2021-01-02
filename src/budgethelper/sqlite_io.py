@@ -22,6 +22,11 @@ class SQLiteio:
         self.conn = sqlite3.connect(database=database_name)
         self.cursor = self.conn.cursor()
 
+    def __del__(self) -> None:
+        """ Destroy connection, does not commit """
+        if self.conn:
+            self.conn.close()
+
     @property
     def changes(self) -> int:
         """ Return the # of changes pending """
@@ -32,3 +37,11 @@ class SQLiteio:
         self.cursor.execute("SELECT * FROM sqlite_master WHERE type = 'table'")
         results = self.cursor.fetchall()
         return [t[1] for t in results]
+
+    def close(self) -> None:
+        """ Close connection, must reinitialize to open again """
+        self.conn.close()
+
+    def commit(self) -> None:
+        """ Commit pending changes to database (write to file) """
+        self.conn.commit()
