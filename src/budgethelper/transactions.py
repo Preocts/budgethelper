@@ -30,6 +30,7 @@ class TransRow(TypedDict, total=False):
     uid: int
     source: int
     amount: float
+    description: str
     date: datetime
 
 
@@ -50,11 +51,13 @@ class DBTransactions(sqlite_io.SQLiteio):
                 "uid INTEGER PRIMARY KEY, "
                 "source INTEGER NOT NULL, "
                 "amount NUMERIC NOT NULL, "
+                "description TEXT NOT NULL, "
                 "date DATETIME NOT NULL )"
             ),
             "required_cols": {
                 "source": int,
                 "amount": float,
+                "description": str,
                 "date": datetime,
             },
         }
@@ -82,39 +85,59 @@ class DBTransactions(sqlite_io.SQLiteio):
         self._col_names = [c[0] for c in self.cursor.description]
         return self._col_names
 
-    def save_row(self, row_data: dict) -> None:
+    def save_row(self, row_data: TransRow) -> None:
         """ Save a transactions to the database """
-        for key, value in row_data.items():
-            if not isinstance(value, self._schema["required_cols"][key]):
-                msg = (
-                    f"Invalid data type for {key}. Found {type(value)}, "
-                    f"expecting {self._schema['required_cols'][key]}"
-                )
-                logger.error(msg)
-                raise Exception(msg)
-        values = tuple(row_data.values())
         self.cursor.execute(
-            "INSERT INTO transactions(source, amount, date) "
-            "VALUES(?, ?, ?)",
-            values,
+            "INSERT INTO transactions(source, amount, description, date) "
+            "VALUES(?, ?, ?, ?)",
+            (
+                row_data["source"],
+                row_data["amount"],
+                row_data["description"],
+                row_data["date"],
+            ),
         )
         self.conn.commit()
 
-    def get_row_by_rid(self, uid: int) -> TransRow:
-        """ Finds first and returns row from the database """
+    def get_trans(self, uid: int) -> TransRow:
+        """ Returns transaction by uid """
         self.cursor.execute("SELECT * FROM transactions WHERE uid = ?", (uid,))
         results = self.cursor.fetchone()
+        if not results:
+            msg = f"UID not found: {uid}"
+            logger.error(msg)
+            raise Exception(msg)
         translated: TransRow = {
             "uid": results[0],
             "source": results[1],
             "amount": results[2],
-            "date": results[3],
+            "description": results[3],
+            "date": results[4],
         }
         return translated
 
-    def update_trans(self) -> int:
-        """ Update a transactions in the database """
-        return self.changes
+    def update_trans(self, row_data: TransRow) -> None:
+        """Update a transactions in the database
+
+        Augs:
+            row_data[TransRow]: Transaction data dictionary.
+        """
+        try:
+            self.cursor.execute(
+                "UPDATE transactions SET source = ?, amount = ?, "
+                "description = ?, date = ? WHERE uid = ?",
+                (
+                    row_data["source"],
+                    row_data["amount"],
+                    row_data["description"],
+                    row_data["date"],
+                    row_data["uid"],
+                ),
+            )
+        except KeyError as err:
+            msg = f"Incorrect format for row_data: {err}"
+            logger.error(msg)
+            raise Exception(msg) from err
 
     def list_trans(self) -> int:
         """ Read a group of transactions from database """
