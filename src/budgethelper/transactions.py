@@ -5,12 +5,13 @@
 Author: Preocts <preocts@preocts.com>
 """
 import logging
+import datetime
 
-from datetime import datetime
 from typing import Dict
 from typing import TypedDict
 from typing import Any
 from typing import List
+from typing import Optional
 
 from budgethelper import sqlite_io
 
@@ -31,7 +32,7 @@ class TransRow(TypedDict, total=False):
     source: int
     amount: float
     description: str
-    date: datetime
+    date: datetime.date
 
 
 class DBTransactions(sqlite_io.SQLiteio):
@@ -52,13 +53,13 @@ class DBTransactions(sqlite_io.SQLiteio):
                 "source INTEGER NOT NULL, "
                 "amount NUMERIC NOT NULL, "
                 "description TEXT NOT NULL, "
-                "date DATETIME NOT NULL )"
+                "date DATE NOT NULL )"
             ),
             "required_cols": {
                 "source": int,
                 "amount": float,
                 "description": str,
-                "date": datetime,
+                "date": datetime.date,
             },
         }
 
@@ -139,6 +140,18 @@ class DBTransactions(sqlite_io.SQLiteio):
             logger.error(msg)
             raise Exception(msg) from err
 
-    def list_trans(self) -> int:
-        """ Read a group of transactions from database """
-        return self.changes
+    def list_trans(
+        self,
+        since: datetime.date,
+        until: Optional[datetime.date] = None,
+    ) -> List[TransRow]:
+        """ Gets a time-range of transactions, returns them in a list """
+        if not until:
+            until = since + datetime.timedelta(days=29)
+        self.cursor.execute(
+            "SELECT * FROM transactions WHERE "
+            "date BETWEEN ? and ?"
+            "ORDER BY uid",
+            (since, until),
+        )
+        return self.cursor.fetchall()
