@@ -1,49 +1,32 @@
-SRCDIR="./src/budgethelper"
-TESTDIR="./tests"
-
-.PHONY: update-deps init update install clean clean-pyc clean-build clean-test tests install-dev
-
-update-deps:
-	pip-compile --upgrade --generate-hashes
-	pip-compile --upgrade --generate-hashes --output-file requirements-dev.txt requirements-dev.in
-
-install:
-	pip install --upgrade pip setuptools wheel
-	pip install --upgrade -r requirements.txt
-	pip install --editable .
-
-install-dev:
-	pip install --upgrade -r requirements-dev.txt
-	pre-commit install
+.PHONY: init dev-install update clean-pyc clean-tests
 
 init:
-	pip install pip-tools
-	rm -rf .tox
+	pip install --upgrade pip setuptools wheel pip-tools
 
-update: init update-deps install
+dev-install:  # install development requirements
+	pip install -r requirements-dev.txt
+	pip install -r requirements.txt
+	pre-commit install
+	pre-commit autoupdate
 
-# Run all cleaning steps
-clean: clean-build clean-pyc clean-test
+update: clean-pyc clean-tests init update-deps dev-install
 
-clean-pyc: ## Remove python artifacts.
+update-deps: # update dependancies
+	pip-compile --upgrade --output-file requirements-dev.txt requirements-dev.in
+	pip-compile --upgrade --output-file requirements.txt requirements.in
+
+clean-pyc: ## Remove python/mypy artifacts
+	find . -name '*.egg-info' -exec rm -rf {} +
 	find . -name '*.pyc' -exec rm -f {} +
 	find . -name '*.pyo' -exec rm -f {} +
-	find . -name '*~' -exec rm -f {} +
-	find . -name '__pycache__' -exec rm -fr {} +
+	find . -name '*~' -exec rm -f  {} +
+	find . -name '__pycache__' -exec rm -rf {} +
+	find . -name '.mypy_cache' -exec rm -rf {} +
 
-clean-build: ## Remove build artifacts.
-	find . -name '*.egg-info' -exec rm -fr {} +
-	find . -name '*.egg' -exec rm -fr {} +
-
-clean-test: ## Remove test artifacts
-	rm -fr .tox/
-	rm -f .coverage
-	rm -fr htmlcov/
-	find . -name '.pytest_cache' -exec rm -fr {} +
-
-blacken: ## Run Black against code
-	black --line-length 79 $(SRCDIR)
-	black --line-length 79 $(TESTDIR)
-
-tests: ## Run all tests found in the /tests directory.
-	pytest -v $(TESTDIR)
+clean-tests: ## Removes tox, coverage, and pytest artifacts
+	rm -f coverage.xml
+	rm -rf .tox
+	rm -rf coverage_html_report
+	rm -rf .coverage
+	rm -f code_lines.txt
+	find . -name '.pytest_cache' -exec rm -rf {} +

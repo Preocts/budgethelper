@@ -1,6 +1,7 @@
-pylint
-autopep8
-flake8
-black
-pytest
 pre-commit
+black
+mypy
+flake8
+pytest
+coverage
+tox
