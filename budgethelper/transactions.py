@@ -3,24 +3,25 @@ Class object for handling transactions via SQLiteio
 
 Author: Preocts
 """
+import dataclasses
 import datetime
 import logging
 from typing import List
 from typing import Optional
-from typing import TypedDict
 
 from budgethelper.constants import TRANSACTION_TABLE_SCHEMA
 from budgethelper.dbconnection import DBConnection
 
 
-class TransRow(TypedDict, total=False):
+@dataclasses.dataclass(frozen=True)
+class TransRow:
     """Custom typing: dict"""
 
-    uid: int
     source: int
     amount: float
     description: str
     date: datetime.date
+    uid: Optional[int] = None
 
 
 class TransactionsTableError(Exception):
@@ -80,10 +81,10 @@ class DBTransactions(DBConnection):
             "INSERT INTO transactions(source, amount, description, date) "
             "VALUES(?, ?, ?, ?)",
             (
-                row_data["source"],
-                row_data["amount"],
-                row_data["description"],
-                row_data["date"],
+                row_data.source,
+                row_data.amount,
+                row_data.description,
+                row_data.date,
             ),
         )
 
@@ -92,7 +93,11 @@ class DBTransactions(DBConnection):
     def get_trans(self, uid: int) -> TransRow:
         """Returns transaction by uid"""
 
-        self.cursor.execute("SELECT * FROM transactions WHERE uid = ?", (uid,))
+        self.cursor.execute(
+            "SELECT uid, source, amount, description, date "
+            "FROM transactions WHERE uid = ?",
+            (uid,),
+        )
         results = self.cursor.fetchone()
 
         if not results:
@@ -100,15 +105,13 @@ class DBTransactions(DBConnection):
             self.log.error(msg)
             raise Exception(msg)
 
-        translated: TransRow = {
-            "uid": results[0],
-            "source": results[1],
-            "amount": results[2],
-            "description": results[3],
-            "date": results[4],
-        }
-
-        return translated
+        return TransRow(
+            uid=results[0],
+            source=results[1],
+            amount=results[2],
+            description=results[3],
+            date=results[4],
+        )
 
     def update_trans(self, row_data: TransRow) -> None:
         """
@@ -118,23 +121,17 @@ class DBTransactions(DBConnection):
             row_data[TransRow]: Transaction data dictionary.
         """
 
-        try:
-            self.cursor.execute(
-                "UPDATE transactions SET source = ?, amount = ?, "
-                "description = ?, date = ? WHERE uid = ?",
-                (
-                    row_data["source"],
-                    row_data["amount"],
-                    row_data["description"],
-                    row_data["date"],
-                    row_data["uid"],
-                ),
-            )
-
-        except KeyError as err:
-            msg = f"Incorrect format for row_data: {err}"
-            self.log.error(msg)
-            raise Exception(msg) from err
+        self.cursor.execute(
+            "UPDATE transactions SET source = ?, amount = ?, "
+            "description = ?, date = ? WHERE uid = ?",
+            (
+                row_data.source,
+                row_data.amount,
+                row_data.description,
+                row_data.date,
+                row_data.uid,
+            ),
+        )
 
     def list_trans(
         self,
