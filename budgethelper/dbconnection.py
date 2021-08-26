@@ -20,7 +20,6 @@ class DBConnection:
 
         self.database_name = database_name
         self.conn = sqlite3.connect(database=database_name)
-        self.cursor = self.conn.cursor()
 
     def __del__(self) -> None:
         """Destroy connection, does not commit"""
@@ -37,8 +36,13 @@ class DBConnection:
     def get_tables(self) -> List[str]:
         """return a list of tables in the database"""
 
-        self.cursor.execute("SELECT * FROM sqlite_master WHERE type = 'table'")
-        results = self.cursor.fetchall()
+        cursor = self.conn.cursor()
+
+        try:
+            cursor.execute("SELECT * FROM sqlite_master WHERE type = 'table'")
+            results = cursor.fetchall()
+        finally:
+            cursor.close()
 
         return [t[1] for t in results]
 

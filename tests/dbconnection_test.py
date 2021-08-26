@@ -12,9 +12,10 @@ def fixture_dbconn() -> Generator[DBConnection, None, None]:
     """Create fixture class"""
 
     dbconn = DBConnection(":memory:")
-    dbconn.cursor.execute("CREATE TABLE test01 (id INTEGER PRIMARY KEY )")
-    dbconn.cursor.execute("CREATE TABLE test02 (id INTEGER PRIMARY KEY )")
-    dbconn.cursor.execute("CREATE TABLE test03 (id INTEGER PRIMARY KEY )")
+    cursor = dbconn.conn.cursor()
+    cursor.execute("CREATE TABLE test01 (id INTEGER PRIMARY KEY )")
+    cursor.execute("CREATE TABLE test02 (id INTEGER PRIMARY KEY )")
+    cursor.execute("CREATE TABLE test03 (id INTEGER PRIMARY KEY )")
 
     yield dbconn
 
@@ -26,7 +27,6 @@ def test_opens_database(dbconn: DBConnection) -> None:
 
     assert dbconn.database_name == ":memory:"
     assert isinstance(dbconn.conn, sqlite3.Connection)
-    assert isinstance(dbconn.cursor, sqlite3.Cursor)
 
 
 def test_table_creation(dbconn: DBConnection) -> None:

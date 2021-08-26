@@ -52,6 +52,7 @@ class DBTransactions(DBConnection):
         tables = self.get_tables()
 
         if "transactions" not in tables:
+            self.log.debug("Transactions table missing... creating")
             self._build_table()
 
         for col in TRANSACTION_TABLE_SCHEMA["required_cols"]:
@@ -63,42 +64,65 @@ class DBTransactions(DBConnection):
     def _build_table(self) -> None:
         """Build table from schema"""
 
-        self.cursor.execute(TRANSACTION_TABLE_SCHEMA["table_schema"])
-        self.conn.commit()
+        cursor = self.conn.cursor()
+
+        try:
+            cursor.execute(TRANSACTION_TABLE_SCHEMA["table_schema"])
+            self.conn.commit()
+
+        finally:
+            cursor.close()
 
     def _get_column_names(self) -> List[str]:
         """Return column names from given table"""
 
-        self.cursor.execute("SELECT * from transactions where uid = 0")
-        self._col_names = [c[0] for c in self.cursor.description]
+        cursor = self.conn.cursor()
+
+        try:
+            cursor.execute("SELECT * from transactions where uid = 0")
+            self._col_names = [c[0] for c in cursor.description]
+
+        finally:
+            cursor.close()
 
         return self._col_names
 
     def save_row(self, row_data: TransRow) -> None:
         """Save a transactions to the database"""
 
-        self.cursor.execute(
-            "INSERT INTO transactions(source, amount, description, date) "
-            "VALUES(?, ?, ?, ?)",
-            (
-                row_data.source,
-                row_data.amount,
-                row_data.description,
-                row_data.date,
-            ),
-        )
+        cursor = self.conn.cursor()
 
-        self.conn.commit()
+        try:
+            cursor.execute(
+                "INSERT INTO transactions(source, amount, description, date) "
+                "VALUES(?, ?, ?, ?)",
+                (
+                    row_data.source,
+                    row_data.amount,
+                    row_data.description,
+                    row_data.date,
+                ),
+            )
+            self.conn.commit()
+
+        finally:
+            cursor.close()
 
     def get_trans(self, uid: int) -> TransRow:
         """Returns transaction by uid"""
 
-        self.cursor.execute(
-            "SELECT uid, source, amount, description, date "
-            "FROM transactions WHERE uid = ?",
-            (uid,),
-        )
-        results = self.cursor.fetchone()
+        cursor = self.conn.cursor()
+
+        try:
+            cursor.execute(
+                "SELECT uid, source, amount, description, date "
+                "FROM transactions WHERE uid = ?",
+                (uid,),
+            )
+            results = cursor.fetchone()
+
+        finally:
+            cursor.close()
 
         if not results:
             msg = f"UID not found: {uid}"
@@ -120,18 +144,23 @@ class DBTransactions(DBConnection):
         Augs:
             row_data[TransRow]: Transaction data dictionary.
         """
+        cursor = self.conn.cursor()
 
-        self.cursor.execute(
-            "UPDATE transactions SET source = ?, amount = ?, "
-            "description = ?, date = ? WHERE uid = ?",
-            (
-                row_data.source,
-                row_data.amount,
-                row_data.description,
-                row_data.date,
-                row_data.uid,
-            ),
-        )
+        try:
+            cursor.execute(
+                "UPDATE transactions SET source = ?, amount = ?, "
+                "description = ?, date = ? WHERE uid = ?",
+                (
+                    row_data.source,
+                    row_data.amount,
+                    row_data.description,
+                    row_data.date,
+                    row_data.uid,
+                ),
+            )
+
+        finally:
+            cursor.close()
 
     def list_trans(
         self,
@@ -140,11 +169,20 @@ class DBTransactions(DBConnection):
     ) -> List[TransRow]:
         """Gets a time-range of transactions, returns them in a list"""
 
-        if not until:
-            until = since + datetime.timedelta(days=29)
-        self.cursor.execute(
-            "SELECT * FROM transactions WHERE " "date BETWEEN ? and ?" "ORDER BY uid",
-            (since, until),
-        )
+        until = until if until else since + datetime.timedelta(days=29)
 
-        return self.cursor.fetchall()
+        cursor = self.conn.cursor()
+
+        try:
+            cursor.execute(
+                "SELECT source, amount, description, date, uid "
+                "FROM transactions WHERE date BETWEEN ? and ? "
+                "ORDER BY uid",
+                (since, until),
+            )
+            results = cursor.fetchall()
+
+        finally:
+            cursor.close()
+
+        return [TransRow(*row) for row in results]
