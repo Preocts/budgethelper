@@ -13,11 +13,6 @@ from budgethelper.dbconnection import DBConnection
 from budgethelper.exceptions import TransactionsTableError
 from budgethelper.models.transaction import Transaction
 
-SQL_FULLROW = "source, amount, description, date, created_on, updated_on, uid"
-SQL_INSERT = "source, amount, description, date, created_on, updated_on"
-SQL_INSTERV = "?, ?, ?, ?, ?, ?"
-SQL_UPDATE = "source, amount, description, date, updated_on"
-
 
 class DBTransactions(DBConnection):
     """Abstraction of SQL CRUD methods for transaction table"""
@@ -131,9 +126,9 @@ class DBTransactions(DBConnection):
         """Update a transactions in the database"""
 
         sql = (
-            "UPDATE transactions"
+            "UPDATE transactions "
             "SET source = ?, amount = ?, description = ?, "
-            "date = ?, updated_on = ?"
+            "date = ?, updated_on = ? "
             "WHERE uid = ?"
         )
         values = (

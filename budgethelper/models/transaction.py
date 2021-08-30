@@ -11,6 +11,6 @@ class Transaction:
     amount: float
     description: str
     date: datetime.date
-    uid: Optional[int] = None
     created_on: datetime.datetime = datetime.datetime.now()
     updated_on: datetime.datetime = datetime.datetime.now()
+    uid: Optional[int] = None

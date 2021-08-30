@@ -23,12 +23,25 @@ TRANSACTION_TABLE_SCHEMA: SchemaDict = {
         "source INTEGER NOT NULL, "
         "amount NUMERIC NOT NULL, "
         "description TEXT NOT NULL, "
-        "date DATE NOT NULL )"
+        "date DATE NOT NULL, "
+        "created_on DATE NOT NULL, "
+        "updated_on DATE NOT NULL)"
     ),
     "required_cols": {
         "source": int,
         "amount": float,
         "description": str,
         "date": datetime.date,
+        "created_on": datetime.datetime,
+        "updated_on": datetime.datetime,
+    },
+}
+
+SOURCES_TABLE_SCHEMA: SchemaDict = {
+    "table_schema": (
+        "CREATE TABLE sources (uid INTEGER PRIMARY KEY, name TEXT NOT NULL)"
+    ),
+    "required_cols": {
+        "name": str,
     },
 }
