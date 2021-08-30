@@ -39,9 +39,15 @@ TRANSACTION_TABLE_SCHEMA: SchemaDict = {
 
 SOURCES_TABLE_SCHEMA: SchemaDict = {
     "table_schema": (
-        "CREATE TABLE sources (uid INTEGER PRIMARY KEY, name TEXT NOT NULL)"
+        "CREATE TABLE sources ("
+        "uid INTEGER PRIMARY KEY, "
+        "created_on DATE NOT NUL:, "
+        "updated_on DATE NOT NULL, "
+        "name TEXT NOT NULL)"
     ),
     "required_cols": {
         "name": str,
+        "created_on": datetime.datetime,
+        "updated_on": datetime.datetime,
     },
 }
