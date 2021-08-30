@@ -3,7 +3,6 @@ Class object for handling transactions via SQLiteio
 
 Author: Preocts
 """
-import dataclasses
 import datetime
 import logging
 from typing import List
@@ -11,21 +10,13 @@ from typing import Optional
 
 from budgethelper.constants import TRANSACTION_TABLE_SCHEMA
 from budgethelper.dbconnection import DBConnection
+from budgethelper.exceptions import TransactionsTableError
+from budgethelper.models.transaction import Transaction
 
-
-@dataclasses.dataclass(frozen=True)
-class TransRow:
-    """Custom typing: dict"""
-
-    source: int
-    amount: float
-    description: str
-    date: datetime.date
-    uid: Optional[int] = None
-
-
-class TransactionsTableError(Exception):
-    ...
+SQL_FULLROW = "source, amount, description, date, created_on, updated_on, uid"
+SQL_INSERT = "source, amount, description, date, created_on, updated_on"
+SQL_INSTERV = "?, ?, ?, ?, ?, ?"
+SQL_UPDATE = "source, amount, description, date, updated_on"
 
 
 class DBTransactions(DBConnection):
@@ -87,102 +78,103 @@ class DBTransactions(DBConnection):
 
         return self._col_names
 
-    def save_row(self, row_data: TransRow) -> None:
-        """Save a transactions to the database"""
+    def create(self, row_data: Transaction) -> None:
+        """Create a transaction row in the database"""
+
+        sql = (
+            "INSERT INTO transactions("
+            "source, amount, description, date, created_on, updated_on) "
+            "VALUES (?, ?, ?, ?, ?, ?)"
+        )
+        values = (
+            row_data.source,
+            row_data.amount,
+            row_data.description,
+            row_data.date,
+            row_data.created_on,
+            row_data.updated_on,
+        )
 
         cursor = self.conn.cursor()
 
         try:
-            cursor.execute(
-                "INSERT INTO transactions(source, amount, description, date) "
-                "VALUES(?, ?, ?, ?)",
-                (
-                    row_data.source,
-                    row_data.amount,
-                    row_data.description,
-                    row_data.date,
-                ),
-            )
+            cursor.execute(sql, values)
             self.conn.commit()
 
         finally:
             cursor.close()
 
-    def get_trans(self, uid: int) -> TransRow:
+    def get(self, uid: int) -> Transaction:
         """Returns transaction by uid"""
 
         cursor = self.conn.cursor()
+        sql = (
+            "SELECT source, amount, description, date, created_on, updated_on, uid "
+            "FROM transactions WHERE uid = ?"
+        )
 
         try:
-            cursor.execute(
-                "SELECT uid, source, amount, description, date "
-                "FROM transactions WHERE uid = ?",
-                (uid,),
-            )
+            cursor.execute(sql, (uid,))
             results = cursor.fetchone()
 
         finally:
             cursor.close()
 
         if not results:
-            msg = f"UID not found: {uid}"
+            msg = f"Unable to GET, UID not found: {uid}"
             self.log.error(msg)
-            raise Exception(msg)
+            raise TransactionsTableError(msg)
 
-        return TransRow(
-            uid=results[0],
-            source=results[1],
-            amount=results[2],
-            description=results[3],
-            date=results[4],
+        return Transaction(*results)
+
+    def update(self, transaction: Transaction) -> None:
+        """Update a transactions in the database"""
+
+        sql = (
+            "UPDATE transactions"
+            "SET source = ?, amount = ?, description = ?, "
+            "date = ?, updated_on = ?"
+            "WHERE uid = ?"
+        )
+        values = (
+            transaction.source,
+            transaction.amount,
+            transaction.description,
+            transaction.date,
+            transaction.updated_on,
+            transaction.uid,
         )
 
-    def update_trans(self, row_data: TransRow) -> None:
-        """
-        Update a transactions in the database
-
-        Augs:
-            row_data[TransRow]: Transaction data dictionary.
-        """
         cursor = self.conn.cursor()
 
         try:
-            cursor.execute(
-                "UPDATE transactions SET source = ?, amount = ?, "
-                "description = ?, date = ? WHERE uid = ?",
-                (
-                    row_data.source,
-                    row_data.amount,
-                    row_data.description,
-                    row_data.date,
-                    row_data.uid,
-                ),
-            )
+            cursor.execute(sql, values)
 
         finally:
             cursor.close()
 
-    def list_trans(
+    def getlist(
         self,
         since: datetime.date,
         until: Optional[datetime.date] = None,
-    ) -> List[TransRow]:
+    ) -> List[Transaction]:
         """Gets a time-range of transactions, returns them in a list"""
 
         until = until if until else since + datetime.timedelta(days=29)
+        sql = (
+            "SELECT source, amount, description, date, created_on, updated_on, uid "
+            "FROM transactions WHERE date BETWEEN ? and ? "
+            "ORDER BY uid"
+        )
+        values = (since, until)
 
         cursor = self.conn.cursor()
 
         try:
-            cursor.execute(
-                "SELECT source, amount, description, date, uid "
-                "FROM transactions WHERE date BETWEEN ? and ? "
-                "ORDER BY uid",
-                (since, until),
-            )
+            cursor.execute(sql, values)
             results = cursor.fetchall()
 
         finally:
             cursor.close()
 
-        return [TransRow(*row) for row in results]
+        return [Transaction(*row) for row in results]
