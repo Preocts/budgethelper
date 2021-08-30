@@ -5,8 +5,8 @@ from typing import Generator
 
 import pytest
 
+from budgethelper.models.transaction import Transaction
 from budgethelper.transactions import DBTransactions
-from budgethelper.transactions import TransRow
 
 
 @pytest.fixture(scope="function", name="dbconn")
@@ -21,29 +21,29 @@ def fixture_dbconn() -> Generator[DBTransactions, None, None]:
 
 def test_01_save_row(dbconn: DBTransactions) -> None:
     """Add a row to given table, follow schema"""
-    row = TransRow(
+    row = Transaction(
         source=0,
         amount=10.99,
         description="Happy go lucky now",
         date=datetime.datetime.now(),
     )
     change_count: int = dbconn.changes
-    dbconn.save_row(row)
+    dbconn.create(row)
     assert dbconn.changes == change_count + 1
 
 
 def test_02_get_row(dbconn: DBTransactions) -> None:
     """Get a row from a given table, force schema"""
-    row = TransRow(
+    row = Transaction(
         source=99,
         amount=99.99,
         description="Nine Nine Nine",
         date=datetime.datetime.now(),
     )
-    dbconn.save_row(row)
+    dbconn.create(row)
     dbconn.commit()
-    results = dbconn.get_trans(1)
-    assert isinstance(results, TransRow)
+    results = dbconn.get(1)
+    assert isinstance(results, Transaction)
 
     assert results.uid == 1
     assert results.source == 99
@@ -53,16 +53,16 @@ def test_02_get_row(dbconn: DBTransactions) -> None:
 
 def test_03_update_row(dbconn: DBTransactions) -> None:
     """Test updating with valid data"""
-    row = TransRow(
+    row = Transaction(
         source=99,
         amount=99.99,
         description="Nine Nine Nine",
         date=datetime.datetime.now(),
     )
-    dbconn.save_row(row)
+    dbconn.create(row)
     dbconn.commit()
 
-    row = TransRow(
+    row = Transaction(
         uid=1,
         source=10,
         amount=99.99,
@@ -70,8 +70,8 @@ def test_03_update_row(dbconn: DBTransactions) -> None:
         date=datetime.datetime.now(),
     )
 
-    dbconn.update_trans(row)
-    results = dbconn.get_trans(1)
+    dbconn.update(row)
+    results = dbconn.get(1)
     assert results.description == "Updated"
 
 
@@ -80,24 +80,24 @@ def test_04_list_rows(dbconn: DBTransactions) -> None:
     random.seed()
     dates = date_gen("2021-01-01")
     for _ in range(100):
-        row = TransRow(
+        row = Transaction(
             source=random.randint(0, 99),  # nosec
             amount=round(random.random(), 2),  # nosec
             description="Lots of entries",
             date=next(dates),
         )
-        dbconn.save_row(row)
+        dbconn.create(row)
     since = datetime.date.fromisoformat("2020-12-01")
-    results = dbconn.list_trans(since)
+    results = dbconn.getlist(since)
     assert len(results) == 30
 
     since = datetime.date.fromisoformat("1995-12-01")
-    results = dbconn.list_trans(since)
+    results = dbconn.getlist(since)
     assert len(results) == 0
 
     since = datetime.date.fromisoformat("2020-12-01")
     until = datetime.date.fromisoformat("2020-12-10")
-    results = dbconn.list_trans(since, until)
+    results = dbconn.getlist(since, until)
     assert len(results) == 10
 
 
