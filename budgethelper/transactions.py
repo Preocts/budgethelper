@@ -99,7 +99,7 @@ class DBTransactions(DBConnection):
         finally:
             cursor.close()
 
-    def get(self, uid: int) -> Transaction:
+    def read(self, uid: int) -> Transaction:
         """Returns transaction by uid"""
 
         cursor = self.conn.cursor()
@@ -116,37 +116,11 @@ class DBTransactions(DBConnection):
             cursor.close()
 
         if not results:
-            msg = f"Unable to GET, UID not found: {uid}"
+            msg = f"Unable to read, UID not found: {uid}"
             self.log.error(msg)
             raise TransactionsTableError(msg)
 
         return Transaction(*results)
-
-    def update(self, transaction: Transaction) -> None:
-        """Update a transactions in the database"""
-
-        sql = (
-            "UPDATE transactions "
-            "SET source = ?, amount = ?, description = ?, "
-            "date = ?, updated_on = ? "
-            "WHERE uid = ?"
-        )
-        values = (
-            transaction.source,
-            transaction.amount,
-            transaction.description,
-            transaction.date,
-            transaction.updated_on,
-            transaction.uid,
-        )
-
-        cursor = self.conn.cursor()
-
-        try:
-            cursor.execute(sql, values)
-
-        finally:
-            cursor.close()
 
     def getlist(
         self,
@@ -173,3 +147,45 @@ class DBTransactions(DBConnection):
             cursor.close()
 
         return [Transaction(*row) for row in results]
+
+    def update(self, transaction: Transaction) -> None:
+        """Update a transactions in the database"""
+
+        sql = (
+            "UPDATE transactions "
+            "SET source = ?, amount = ?, description = ?, "
+            "date = ?, updated_on = ? "
+            "WHERE uid = ?"
+        )
+        values = (
+            transaction.source,
+            transaction.amount,
+            transaction.description,
+            transaction.date,
+            transaction.updated_on,
+            transaction.uid,
+        )
+
+        cursor = self.conn.cursor()
+
+        try:
+            cursor.execute(sql, values)
+            self.conn.commit()
+
+        finally:
+            cursor.close()
+
+    def delete(self, uid: int) -> None:
+        """Delete a row from the database, should not have downstream effects"""
+
+        sql = "DELETE FROM transactions WHERE uid = ?"
+        values = (uid,)
+
+        cursor = self.conn.cursor()
+
+        try:
+            cursor.execute(sql, values)
+            self.conn.commit()
+
+        finally:
+            cursor.close()
