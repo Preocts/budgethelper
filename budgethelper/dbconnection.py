@@ -3,13 +3,14 @@ Class object for handling IO of a sqlite database
 
 Author: Preocts
 """
-import sqlite3
 from typing import List
 
-from models.database import Database
+from budgethelper.databases.databaseabc import DatabaseABC
+from budgethelper.databases.sqlite import SQlite
+from budgethelper.models.database import Database
 
 
-class DBConnection:
+class DBConnection(DatabaseABC):
     """Abstraction for SQLite3 database level functions"""
 
     def __init__(self, database: Database) -> None:
@@ -19,41 +20,36 @@ class DBConnection:
         Args:
             database: path and name of the database file to open
         """
-
+        self.client: DatabaseABC
         self.database = database
-        self.conn = sqlite3.connect(database=database.name)
+
+        if self.database.type == "sqlite3":
+            self.client = SQlite(self.database)
+        else:
+            raise ValueError(f"Unexpected database type '{database.type}'")
 
     def __del__(self) -> None:
         """Destroy connection, does not commit"""
 
-        if self.conn:
-            self.conn.close()
+        self.close()
 
     @property
     def changes(self) -> int:
         """Return the # of changes pending"""
 
-        return self.conn.total_changes
+        return self.client.changes()  # type: ignore
 
-    def get_tables(self) -> List[str]:
+    def listtables(self) -> List[str]:
         """return a list of tables in the database"""
 
-        cursor = self.conn.cursor()
-
-        try:
-            cursor.execute("SELECT * FROM sqlite_master WHERE type = 'table'")
-            results = cursor.fetchall()
-        finally:
-            cursor.close()
-
-        return [t[1] for t in results]
+        return self.client.listtables()
 
     def close(self) -> None:
         """Close connection, must reinitialize to open again"""
 
-        self.conn.close()
+        self.client.close()
 
     def commit(self) -> None:
         """Commit pending changes to database (write to file)"""
 
-        self.conn.commit()
+        self.client.commit()
