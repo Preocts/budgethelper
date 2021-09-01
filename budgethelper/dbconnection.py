@@ -6,11 +6,13 @@ Author: Preocts
 import sqlite3
 from typing import List
 
+from models.database import Database
+
 
 class DBConnection:
     """Abstraction for SQLite3 database level functions"""
 
-    def __init__(self, database_name: str) -> None:
+    def __init__(self, database: Database) -> None:
         """
         Initilize class
 
@@ -18,8 +20,8 @@ class DBConnection:
             database: path and name of the database file to open
         """
 
-        self.database_name = database_name
-        self.conn = sqlite3.connect(database=database_name)
+        self.database = database
+        self.conn = sqlite3.connect(database=database.name)
 
     def __del__(self) -> None:
         """Destroy connection, does not commit"""
