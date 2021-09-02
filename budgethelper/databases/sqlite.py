@@ -6,9 +6,12 @@ from typing import List
 
 from budgethelper.databases.databaseabc import DatabaseABC
 from budgethelper.models.database import Database
+from budgethelper.protocols.sqlite_cursor import SQLiteCursor
 
 
 class SQlite(DatabaseABC):
+    Cursor: SQLiteCursor
+
     def __init__(self, database: Database) -> None:
         """Creates SQLite3 connection abstract"""
         self.database = database

@@ -8,6 +8,7 @@ from typing import List
 from budgethelper.databases.databaseabc import DatabaseABC
 from budgethelper.databases.sqlite import SQlite
 from budgethelper.models.database import Database
+from budgethelper.protocols.sqlcursor import SQLCursor
 
 
 class DBConnection(DatabaseABC):
@@ -32,6 +33,9 @@ class DBConnection(DatabaseABC):
         """Destroy connection, does not commit"""
 
         self.close()
+
+    def cursor(self) -> SQLCursor:
+        return self.client.conn.cursor()
 
     @property
     def changes(self) -> int:

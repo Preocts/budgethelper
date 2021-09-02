@@ -27,8 +27,7 @@ class DBSources(DBConnection):
         Raises:
             SourceTableError (Exception) - Message will detail error
         """
-        database_name = Database.name
-        super().__init__(database_name)
+        super().__init__(database)
 
     def create(self, sourcerow: SourceRow) -> None:
         """Creates a source row in the database"""
@@ -36,11 +35,11 @@ class DBSources(DBConnection):
         sql = "INSERT INTO sources (name, created_on, updated_on) VALUES (?, ?, ?)"
         values = (sourcerow.name, sourcerow.created_on, sourcerow.updated_on)
 
-        cursor = self.conn.cursor()
+        cursor = self.cursor()
 
         try:
             cursor.execute(sql, values)
-            self.conn.commit()
+            self.commit()
 
         finally:
             cursor.close()
@@ -51,7 +50,7 @@ class DBSources(DBConnection):
         sql = "SELECT name, created_on, updated_on, uid FROM sources WHERE uid = ?"
         values = (uid,)
 
-        cursor = self.conn.cursor()
+        cursor = self.cursor()
 
         try:
             cursor.execute(sql, values)
@@ -72,7 +71,7 @@ class DBSources(DBConnection):
 
         sql = "SELECT name, created_on, updated_on, uid FROM sources"
 
-        cursor = self.conn.cursor()
+        cursor = self.cursor()
 
         try:
             cursor.execute(sql)
@@ -89,11 +88,11 @@ class DBSources(DBConnection):
         sql = "UPDATE sources SET name = ?, updated_on = ? WHERE uid = ?"
         values = (source.name, source.updated_on, source.uid)
 
-        cursor = self.conn.cursor()
+        cursor = self.cursor()
 
         try:
             cursor.execute(sql, values)
-            self.conn.commit()
+            self.commit()
 
         finally:
             cursor.close()
@@ -104,11 +103,11 @@ class DBSources(DBConnection):
         sql = "DELETE from sources WHERE uid = ?"
         values = (uid,)
 
-        cursor = self.conn.cursor()
+        cursor = self.cursor()
 
         try:
             cursor.execute(sql, values)
-            self.conn.commit()
+            self.commit()
 
         finally:
             cursor.close()
