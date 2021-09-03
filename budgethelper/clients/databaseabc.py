@@ -5,9 +5,7 @@ from abc import ABC
 from abc import abstractmethod
 from sqlite3 import Connection
 from typing import Any
-from typing import Dict
 from typing import List
-from typing import Optional
 
 
 class DatabaseABC(ABC):
@@ -43,7 +41,7 @@ class DatabaseABC(ABC):
         ...
 
     @abstractmethod
-    def create(self, row_object: Any) -> bool:
+    def create(self, row_object: Any) -> None:
         ...
 
     @abstractmethod
@@ -51,13 +49,9 @@ class DatabaseABC(ABC):
         ...
 
     @abstractmethod
-    def getlist(self, params: Optional[Dict[str, Any]]) -> List[Any]:
+    def update(self, row_object: Any) -> None:
         ...
 
     @abstractmethod
-    def update(self, row_object: Any) -> bool:
-        ...
-
-    @abstractmethod
-    def delete(self, uid: int) -> bool:
+    def delete(self, uid: int) -> None:
         ...
