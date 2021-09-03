@@ -1,5 +1,5 @@
 """
-Abstract class for SQLite3 Database connection
+Provider class for database sources table
 """
 import logging
 import sqlite3
@@ -9,41 +9,43 @@ from typing import List
 from typing import Optional
 
 from budgethelper.clients.databaseabc import DatabaseABC
+from budgethelper.constants import SOURCES_TABLE_SCHEMA
 from budgethelper.exceptions import SourceTableError
 from budgethelper.models.database import Database
 from budgethelper.models.source import Source
 
 
-class SQlite(DatabaseABC):
+class SourceClient(DatabaseABC):
+    TABLE_NAME = "sources"
+
     def __init__(self, database: Database) -> None:
-        """Creates SQLite3 connection abstract"""
+        """Provisions SQL client to database for sources table"""
         self.log = logging.getLogger(__name__)
         self.database = database
         self.conn = sqlite3.connect(database=database.name)
 
-    @property
-    def changes(self) -> int:
-        """Return the # of changes pending"""
+        if self.TABLE_NAME not in self.listtables(self.conn):
+            self.log.debug("Table missing: '%s'", self.TABLE_NAME)
+            raise SourceTableError(f"Table missing '{self.TABLE_NAME}'")
 
-        return self.conn.total_changes
+        self.columns = self.listcolumns()
 
-    def listtables(self) -> List[str]:
-        """return a list of tables in the database"""
+        for column in SOURCES_TABLE_SCHEMA["required_cols"]:
+            if column not in self.columns:
+                self.log.error("Missing column from table: '%s'", column)
+                raise SourceTableError(f"Missing column from table: {column}")
+
+    def listcolumns(self) -> List[str]:
+        """Return column names from table"""
 
         cursor = self.conn.cursor()
 
         try:
-            cursor.execute("SELECT * FROM sqlite_master WHERE type = 'table'")
-            results = cursor.fetchall()
+            cursor.execute("SELECT * from sources where uid = 0")
+            return [c[0] for c in cursor.description]
+
         finally:
             cursor.close()
-
-        return [t[1] for t in results]
-
-    def close(self) -> None:
-        """Close connection, must reinitialize to open again"""
-
-        self.conn.close()
 
     def create(self, sourcerow: Source) -> bool:
         """Creates a source row in the database"""

@@ -3,6 +3,7 @@ Abstract Base Class
 """
 from abc import ABC
 from abc import abstractmethod
+from sqlite3 import Connection
 from typing import Any
 from typing import Dict
 from typing import List
@@ -10,19 +11,35 @@ from typing import Optional
 
 
 class DatabaseABC(ABC):
-    conn: Any
+    conn: Connection
 
     @property
-    @abstractmethod
     def changes(self) -> int:
-        ...
+        """Return the # of changes pending"""
 
-    @abstractmethod
-    def listtables(self) -> List[str]:
-        ...
+        return self.conn.total_changes
 
-    @abstractmethod
     def close(self) -> None:
+        """Close connection, must reinitialize to open again"""
+
+        self.conn.close()
+
+    @staticmethod
+    def listtables(conn: Connection) -> List[str]:
+        """return a list of tables in the database"""
+
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("SELECT * FROM sqlite_master WHERE type = 'table'")
+            results = cursor.fetchall()
+        finally:
+            cursor.close()
+
+        return [t[1] for t in results]
+
+    @abstractmethod
+    def listcolumns(self) -> List[str]:
         ...
 
     @abstractmethod
