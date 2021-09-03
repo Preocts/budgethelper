@@ -4,7 +4,7 @@ from typing import Optional
 
 
 @dataclasses.dataclass(frozen=True)
-class SourceRow:
+class Source:
     """Model of Source Table row"""
 
     name: str
