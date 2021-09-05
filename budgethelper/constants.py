@@ -1,9 +1,8 @@
 """
 Constant values
-
-Author: Preocts
 """
 import datetime
+import pathlib
 from typing import Any
 from typing import Dict
 from typing import TypedDict
@@ -15,6 +14,13 @@ class SchemaDict(TypedDict):
     table_schema: str
     required_cols: Dict[str, Any]
 
+
+DATABASE_FILE = pathlib.Path(__file__).parent / "database.db"
+
+DATABASE_TABLES = [
+    "TRANSACTION_TABLE_SCHEMA",
+    "SOURCES_TABLE_SCHEMA",
+]
 
 TRANSACTION_TABLE_SCHEMA: SchemaDict = {
     "table_schema": (
