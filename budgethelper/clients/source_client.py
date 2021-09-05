@@ -2,7 +2,6 @@
 Provider class for database sources table
 """
 import logging
-import sqlite3
 from typing import List
 
 from budgethelper.clients.databaseabc import DatabaseABC
@@ -17,9 +16,8 @@ class SourceClient(DatabaseABC):
 
     def __init__(self, database: Database) -> None:
         """Provisions SQL client to database for sources table"""
+        super().__init__(database)
         self.log = logging.getLogger(__name__)
-        self.database = database
-        self.conn = sqlite3.connect(database=database.name)
 
         if self.TABLE_NAME not in self.listtables(self.conn):
             raise SourceTableError(f"Table missing '{self.TABLE_NAME}'")

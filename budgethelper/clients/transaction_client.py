@@ -3,7 +3,6 @@ Provider class for database Transaction table
 """
 import datetime
 import logging
-import sqlite3
 from typing import List
 from typing import Optional
 
@@ -19,9 +18,8 @@ class TransactionClient(DatabaseABC):
 
     def __init__(self, database: Database) -> None:
         """Provisions SQL client to database for transaction table"""
+        super().__init__(database)
         self.log = logging.getLogger(__name__)
-        self.database = database
-        self.conn = sqlite3.connect(database=database.name)
 
         if self.TABLE_NAME not in self.listtables(self.conn):
             raise TransactionsTableError(f"Table missing '{self.TABLE_NAME}'")

@@ -1,15 +1,20 @@
 """
 Abstract Base Class
 """
+import sqlite3
 from abc import ABC
 from abc import abstractmethod
-from sqlite3 import Connection
 from typing import Any
 from typing import List
 
+from budgethelper.models.database import Database
+
 
 class DatabaseABC(ABC):
-    conn: Connection
+    def __init__(self, database: Database) -> None:
+        super().__init__()
+        self.database = database
+        self.conn = sqlite3.connect(database=database.name)
 
     @property
     def changes(self) -> int:
@@ -23,7 +28,7 @@ class DatabaseABC(ABC):
         self.conn.close()
 
     @staticmethod
-    def listtables(conn: Connection) -> List[str]:
+    def listtables(conn: sqlite3.Connection) -> List[str]:
         """return a list of tables in the database"""
 
         cursor = conn.cursor()
